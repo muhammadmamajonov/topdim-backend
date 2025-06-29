@@ -15,5 +15,5 @@ contact_keyboard = ReplyKeyboardMarkup(
 
 
 sayt_link = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="Ko'rish", web_app=WebAppInfo(url="https://73cb-213-230-102-237.ngrok-free.app"))]
+    [InlineKeyboardButton(text="Ko'rish", web_app=WebAppInfo(url="https://reliable-salmiakki-b79ea8.netlify.app"))]
 ])
