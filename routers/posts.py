@@ -15,7 +15,7 @@ router = APIRouter(tags=["Posts"], prefix="/posts")
 @router.post("/", response_model=posts_schemas.GetPostSchema)
 async def add_post(
     photos: List[UploadFile], db: DB_SESSION, request: Request,
-    title: str = Form(), description: str = Form(), user_tg_id: int = Form(),
+    title: str = Form(), description: str = Form(), user_tg_id: str = Form(),
     phone_number: str = Form(), category_id: int = Form(),
     subcategory_id: Optional[int] = Form(default=None),
     region_id: int = Form(), district_id: int = Form(),):
