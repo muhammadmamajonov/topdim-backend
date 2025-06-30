@@ -17,13 +17,13 @@ async def add_post(
     photos: List[UploadFile], db: DB_SESSION, request: Request,
     title: str = Form(), description: str = Form(), user_tg_id: int = Form(),
     phone_number: str = Form(), category_id: int = Form(),
-    sub_category_id: Optional[int] = Form(default=None),
+    subcategory_id: Optional[int] = Form(default=None),
     region_id: int = Form(), district_id: int = Form(),):
    
     new_post = Post(
         title=title, description=description, 
         phone_number=phone_number, category_id=category_id, 
-        sub_category_id=sub_category_id, region_id=region_id, 
+        sub_category_id=subcategory_id, region_id=region_id, 
         district_id=district_id, user_tg_id=user_tg_id
     )
     db.add(new_post)
