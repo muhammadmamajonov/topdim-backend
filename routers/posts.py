@@ -12,7 +12,7 @@ from schemas import posts as posts_schemas
 router = APIRouter(tags=["Posts"], prefix="/posts")
 
 
-@router.post("/", response_model=posts_schemas.GetPostSchema)
+@router.post("/", response_model=posts_schemas.PostDetailSchema)
 async def add_post(
     photos: List[UploadFile], db: DB_SESSION, request: Request,
     title: str = Form(), description: str = Form(), user_tg_id: str = Form(),
@@ -86,4 +86,16 @@ async def my_posts(user_tg_id: str, db: DB_SESSION, request: Request):
         d['region'] = post.region.name
         d['district'] = post.district.name
         data.append(d)
+    return data
+
+
+@router.get("/{post_id}", response_model=posts_schemas.PostDetailSchema)
+async def post_detail(post_id: int, db: DB_SESSION, request: Request):
+    post = await db.execute(select(Post).filter(Post.id==post_id).options(selectinload(Post.photos)).options(selectinload(Post.district)).options(selectinload(Post.region)))
+    post = post.scalars().first()
+    photos = post.photos
+    data = post.__dict__
+    data['photos'] = [f"{request.base_url}{photo.path}" for photo in photos]
+    data['region'] = post.region.name
+    data['district'] = post.district.name
     return data

@@ -11,10 +11,6 @@ class AddPostSchema(BaseModel):
     region_id: int
     district_id: int
 
-    
-class GetPostSchema(AddPostSchema):
-    id: int
-    photos: List[str]
 
 class PostListSchema(BaseModel):
     id: int
@@ -23,3 +19,6 @@ class PostListSchema(BaseModel):
     region: str
     district: str
     photos: List[str]
+
+class PostDetailSchema(PostListSchema):
+    description: str
