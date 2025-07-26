@@ -12,7 +12,7 @@ from schemas import posts as posts_schemas
 router = APIRouter(tags=["Posts"], prefix="/posts")
 
 
-@router.post("/", response_model=posts_schemas.PostDetailSchema)
+@router.post("/")
 async def add_post(
     photos: List[UploadFile], db: DB_SESSION, request: Request,
     title: str = Form(), description: str = Form(), user_tg_id: str = Form(),
@@ -36,9 +36,7 @@ async def add_post(
         db.add(photo_object)
 
     await db.commit()
-    data = new_post.__dict__
-    data["photos"] = [f"{request.base_url}{path}" for path in photos_paths]
-    return new_post
+    return {"detail": "success"}
 
 
 @router.get("/", response_model=List[posts_schemas.PostListSchema])
