@@ -22,3 +22,19 @@ class PostListSchema(BaseModel):
 
 class PostDetailSchema(PostListSchema):
     description: str
+
+
+class PhotoSchema(BaseModel):
+    id: int
+    url: str
+
+class PostDetailForUpdateSchema(BaseModel):
+    id: int
+    title: Optional[str] = None
+    description: Optional[str] = None
+    phone_number: Optional[str] = None
+    category_id: Optional[int] = None
+    sub_category_id: Optional[int] = None
+    region_id: Optional[int] = None
+    district_id: Optional[int] = None
+    photos: List[PhotoSchema] = []

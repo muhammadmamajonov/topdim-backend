@@ -1,7 +1,7 @@
-from typing import Any, List, Optional
-from fastapi import APIRouter, Form, UploadFile, Request
 from sqlalchemy import select
+from typing import Any, List, Optional
 from sqlalchemy.orm import selectinload
+from fastapi import APIRouter, Form, UploadFile, Request, HTTPException
 
 from utils import storage
 from database import DB_SESSION
@@ -97,3 +97,114 @@ async def post_detail(post_id: int, db: DB_SESSION, request: Request):
     data['region'] = post.region.name
     data['district'] = post.district.name
     return data
+
+
+@router.get("/{post_id}/update", response_model=posts_schemas.PostDetailForUpdateSchema)
+async def post_update_detail(post_id: int, tg_id: str, db: DB_SESSION, request: Request):
+    
+    post = await db.execute(select(Post).filter(Post.id == post_id, Post.user_tg_id == tg_id).options(selectinload(Post.photos)))
+    post = post.scalars().first()
+    
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    photos = [posts_schemas.PhotoSchema(id=photo.id, url=f"{request.base_url}{photo.path}") for photo in post.photos]
+    data = post.__dict__
+    data['photos'] = photos
+    return data
+
+
+@router.put("/{post_id}")
+async def update_post(
+    post_id: int, tg_id: str, db: DB_SESSION,
+    title: Optional[str] = Form(default=None), 
+    description: Optional[str] = Form(default=None),
+    phone_number: Optional[str] = Form(default=None),
+    category_id: Optional[int] = Form(default=None),
+    subcategory_id: Optional[int] = Form(default=None),
+    region_id: Optional[int] = Form(default=None),
+    district_id: Optional[int] = Form(default=None)
+):
+    
+    post = await db.execute(select(Post).filter(Post.id == post_id, Post.user_tg_id == tg_id).options(selectinload(Post.photos)))
+    post = post.scalars().first()
+    
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found or you do not have permission to update this post")
+    
+    if title is not None:
+        post.title = title
+    if description is not None:
+        post.description = description
+    if phone_number is not None:
+        post.phone_number = phone_number
+    if category_id is not None:
+        post.category_id = category_id
+    if subcategory_id is not None:
+        post.sub_category_id = subcategory_id
+    if region_id is not None:
+        post.region_id = region_id
+    if district_id is not None:
+        post.district_id = district_id
+    
+    await db.commit()
+    return {"detail": "success"}
+
+
+@router.put("/{post_id}/update-photo/{photo_id}")
+async def update_post_photo(
+    post_id: int, photo_id: int, tg_id: str, db: DB_SESSION, 
+    new_photo: UploadFile
+):
+    post = await db.execute(select(Post).filter(Post.id == post_id, Post.user_tg_id == tg_id).options(selectinload(Post.photos)))
+    post = post.scalars().first()
+    
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found or you do not have permission to update this post")
+    
+    photo = next((p for p in post.photos if p.id == photo_id), None)
+    
+    if not photo:
+        raise HTTPException(status_code=404, detail="Photo not found or you do not have permission to update this photo")
+    
+    storage.delete_file(photo.path)
+    new_photo_path = storage.save_file("photos", new_photo)
+    photo.path = new_photo_path
+    
+    await db.commit()
+    
+    return {"detail": "success"}
+
+
+@router.delete("/{post_id}/delete-photo/{photo_id}")
+async def delete_post_photo(post_id: int, photo_id: int, tg_id: str, db: DB_SESSION):
+    post = await db.execute(select(Post).filter(Post.id == post_id, Post.user_tg_id == tg_id).options(selectinload(Post.photos)))
+    post = post.scalars().first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found or you do not have permission to delete this post")
+
+    photo = next((p for p in post.photos if p.id == photo_id), None)
+    if not photo:
+        raise HTTPException(status_code=404, detail="Photo not found or you do not have permission to delete this photo")
+
+    storage.delete_file(photo.path)
+    await db.delete(photo)
+    await db.commit()
+    return {"detail": "success"}
+
+
+@router.delete("/{post_id}")
+async def delete_post(post_id: int, tg_id: str, db: DB_SESSION):
+    post = await db.execute(select(Post).filter(Post.id == post_id, Post.user_tg_id == tg_id).options(selectinload(Post.photos)))
+    post = post.scalars().first()
+    
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found or you do not have permission to delete this post")
+    
+    for photo in post.photos:
+        storage.delete_file(photo.path)
+    
+    await db.delete(post)
+    await db.commit()
+    
+    return {"detail": "success"}
